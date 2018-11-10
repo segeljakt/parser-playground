@@ -56,42 +56,27 @@ mod ast {
   
   #[derive(Debug)]
   pub enum Expr {
-    Not(Box<Not>),
-    Neg(Box<Neg>),
-    Add(Box<Add>),
-    Sub(Box<Sub>),
-    Mul(Box<Mul>),
-    Div(Box<Div>),
-    Pow(Box<Pow>),
-    LitInt(Box<LitInt>),
-    LitBool(Box<LitBool>),
+    LitInt(Int),
+    LitBool(Bool),
+    Not(Box<Expr>),
+    Neg(Box<Expr>),
+    Add(Box<(Expr,Expr)>),
+    Sub(Box<(Expr,Expr)>),
+    Mul(Box<(Expr,Expr)>),
+    Div(Box<(Expr,Expr)>),
+    Pow(Box<(Expr,Expr)>),
   }
-
-  #[derive(Debug)]
-  pub struct Add(Expr, Expr);
-  #[derive(Debug)]
-  pub struct Sub(Expr, Expr);
-  #[derive(Debug)]
-  pub struct Mul(Expr, Expr);
-  #[derive(Debug)]
-  pub struct Div(Expr, Expr);
-  #[derive(Debug)]
-  pub struct Pow(Expr, Expr);
-  #[derive(Debug)]
-  pub struct Not(Expr);
-  #[derive(Debug)]
-  pub struct Neg(Expr);
 
   #[derive(Debug, FromPest)]
   #[pest_ast(rule(Rule::lit_int))]
-  pub struct LitInt(
+  pub struct Int(
     #[pest_ast(outer(with(span_into_str), with(str::parse), with(Result::unwrap)))]
     i32
   );
 
   #[derive(Debug, FromPest)]
   #[pest_ast(rule(Rule::lit_bool))]
-  pub struct LitBool(
+  pub struct Bool(
     #[pest_ast(outer(with(span_into_str), with(str::parse), with(Result::unwrap)))]
     bool
   );
@@ -122,27 +107,33 @@ mod ast {
     type Rule = Rule;
     type FatalError = Void;
     fn from_pest(pest: &mut Pairs<'pest, Rule>) -> ExprResult {
+      use self::Rule::*;
+      use self::Expr::*;
       PREC_CLIMBER.climb(pest,
-        |pair: Pair<Rule>| Ok(match pair.as_rule() {
-          Rule::lit_int  => Expr::LitInt(box LitInt::from_pest(&mut Pairs::single(pair))?),
-          Rule::lit_bool => Expr::LitBool(box LitBool::from_pest(&mut Pairs::single(pair))?),
-          Rule::not      => Expr::Not(box Not(Expr::from_pest(&mut pair.into_inner())?)),
-          Rule::neg      => Expr::Neg(box Neg(Expr::from_pest(&mut pair.into_inner())?)),
-          Rule::expr     => Expr::from_pest(&mut pair.into_inner())?,
-          _ => unreachable!(),
-        }),
-        |lhs: ExprResult, op: Pair<Rule>, rhs: ExprResult| Ok(match op.as_rule() {
-          Rule::add => Expr::Add(box Add(lhs?, rhs?)),
-          Rule::sub => Expr::Sub(box Sub(lhs?, rhs?)),
-          Rule::mul => Expr::Mul(box Mul(lhs?, rhs?)),
-          Rule::div => Expr::Div(box Div(lhs?, rhs?)),
-          Rule::pow => Expr::Pow(box Pow(lhs?, rhs?)),
-          _ => unreachable!(),
-        }),
-      )
+        |pair: Pair<Rule>| Ok(
+          match pair.as_rule() {
+            lit_int  => LitInt(Int::from_pest(&mut Pairs::single(pair))?),
+            lit_bool => LitBool(Bool::from_pest(&mut Pairs::single(pair))?),
+            not      => Not(box Expr::from_pest(&mut pair.into_inner())?),
+            neg      => Neg(box Expr::from_pest(&mut pair.into_inner())?),
+            expr     => Expr::from_pest(&mut pair.into_inner())?,
+            _ => unreachable!(),
+          }),
+        |lhs: ExprResult, op: Pair<Rule>, rhs: ExprResult| Ok(
+          match op.as_rule() {
+            add => Add(box (lhs?, rhs?)),
+            sub => Sub(box (lhs?, rhs?)),
+            mul => Mul(box (lhs?, rhs?)),
+            div => Div(box (lhs?, rhs?)),
+            pow => Pow(box (lhs?, rhs?)),
+            _ => unreachable!(),
+          }))
     }
   }
 }
+
+
+
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
   use self::ast::Program;
@@ -154,7 +145,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
   println!("{:#?}", source);
   let mut parse_tree = arc::Parser::parse(arc::Rule::program, &source)?;
   println!("parse tree = {:#?}\n", parse_tree);
-  let syntax_tree: Program = Program::from_pest(&mut parse_tree).expect("lul");
+  let syntax_tree: Program = Program::from_pest(&mut parse_tree).unwrap();
   println!("syntax tree = {:#?}\n", syntax_tree);
 
   Ok(())
