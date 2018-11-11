@@ -12,7 +12,11 @@ fn span_into_str(span: Span) -> &str {
 #[pest_ast(rule(Rule::program))]
 pub struct SyntaxTree<'a> (
   Expr<'a>,
+  //EOI,
 );
+//#[derive(Debug, FromPest)]
+//#[pest_ast(rule(Rule::EOI))]
+//pub struct EOI;
 
 #[derive(Debug, FromPest)]
 #[pest_ast(rule(Rule::ident))]
