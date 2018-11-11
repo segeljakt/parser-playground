@@ -1,0 +1,250 @@
+// Numbers
+t_binary_integer          = _{ "0b" ~ ASCII_BIN_DIGIT+ }
+t_hex_integer             = _{ "0x" ~ ASCII_HEX_DIGIT+ }
+t_decimal_integer         = _{ ASCII_DIGIT+ }
+t_integer                 = _{ t_binary_integer | t_hex_integer | t_decimal_integer }
+t_decimal                 = _{ t_decimal_integer ~ "." ~ t_decimal_integer ~ (("e"|"E") ~ "-"? ~ t_decimal_integer)?
+                             | t_decimal_integer ~ ("e"|"E") ~ "-"? ~ t_decimal_integer }
+t_i8_lit                  = _{ t_integer ~ ("c"|"C") }
+t_i16_lit                 = _{ t_integer ~ "si" }
+t_i32_lit                 = _{ t_integer }
+t_i64_lit                 = _{ t_integer ~ ("l"|"L") }
+t_f32_lit                 = _{ t_decimal ~ ("f"|"F") }
+t_f64_lit                 = _{ t_decimal }
+// Literals
+t_bool_lit                = _{ "true" | "false" }
+t_string_lit              = _{ "\"" ~ (!"\"")* ~ "\"" }
+// Tokens
+t_if                      = _{ "if" }
+t_iterate                 = _{ "iterate" }
+t_let                     = _{ "let" }
+t_for                     = _{ "for" }
+t_merge                   = _{ "merge" }
+t_result                  = _{ "result" }
+t_macro                   = _{ "macro" }
+t_i8                      = _{ "i8" }
+t_i16                     = _{ "i16" }
+t_i32                     = _{ "i32" }
+t_i64                     = _{ "i64" }
+t_u8                      = _{ "u8" }
+t_u16                     = _{ "u16" }
+t_u32                     = _{ "u32" }
+t_u64                     = _{ "u64" }
+t_f32                     = _{ "f32" }
+t_f64                     = _{ "f64" }
+t_bool                    = _{ "bool" }
+t_unit                    = _{ "unit" }
+t_string                  = _{ "string" }
+t_vec                     = _{ "vec" }
+t_stream                  = _{ "stream" }
+t_dict                    = _{ "dict" }
+t_appender                = _{ "appender" }
+t_streamappender          = _{ "streamappender" }
+t_merger                  = _{ "merger" }
+t_dictmerger              = _{ "dictmerger" }
+t_groupmerger             = _{ "groupmerger" }
+t_vecmerger               = _{ "vecmerger" }
+t_tovec                   = _{ "tovec" }
+t_zip                     = _{ "zip" }
+t_scalariter              = _{ "iter" }
+t_next                    = _{ "next" }
+t_keyby                   = _{ "keyby" }
+t_simditer                = _{ "simditer" }
+t_fringeiter              = _{ "fringeiter" }
+t_nditer                  = _{ "nditer" }
+t_rangeiter               = _{ "rangeiter" }
+t_nextiter                = _{ "nextiter" }
+t_len                     = _{ "len" }
+t_lookup                  = _{ "lookup" }
+t_keyexists               = _{ "keyexists" }
+t_slice                   = _{ "slice" }
+t_sort                    = _{ "sort" }
+t_exp                     = _{ "exp" }
+t_sin                     = _{ "sin" }
+t_cos                     = _{ "cos" }
+t_tan                     = _{ "tan" }
+t_asin                    = _{ "asin" }
+t_acos                    = _{ "acos" }
+t_atan                    = _{ "atan" }
+t_sinh                    = _{ "sinh" }
+t_cosh                    = _{ "cosh" }
+t_tanh                    = _{ "tanh" }
+t_log                     = _{ "log" }
+t_erf                     = _{ "erf" }
+t_sqrt                    = _{ "sqrt" }
+t_cudf                    = _{ "cudf" }
+t_simd                    = _{ "simd" }
+t_select                  = _{ "select" }
+t_broadcast               = _{ "broadcast" }
+t_serialize               = _{ "serialize" }
+t_deserialize             = _{ "deserialize" }
+t_min                     = _{ "min" }
+t_max                     = _{ "max" }
+t_pow                     = _{ "pow" }
+t_plus                    = _{ "+" }
+t_minus                   = _{ "-" }
+t_star                    = _{ "*" }
+t_slash                   = _{ "/" }
+t_percent                 = _{ "%" }
+t_bar                     = _{ "|" }
+t_at                      = _{ "@" }
+t_bang                    = _{ "!" }
+t_eq                      = _{ "==" }
+t_assign                  = _{ "=" }
+t_neq                     = _{ "!=" }
+t_lt                      = _{ "<" }
+t_gt                      = _{ ">" }
+t_leq                     = _{ "<=" }
+t_geq                     = _{ ">=" }
+t_and_and                 = _{ "&&" }
+t_bar_bar                 = _{ "||" }
+t_and                     = _{ "&" }
+t_circ                    = _{ "^" }
+// Regions
+t_index                   = _{ "$" ~ t_decimal_integer } // for struct indexes
+t_type_var                = _{ "?" ~ t_decimal_integer? }
+t_ident                   = _{ (ASCII_ALPHA|"_") ~ (ASCII_ALPHANUMERIC|"_")* } // match identifiers
+comment                   = _{ "#" ~ ANY* ~ NEWLINE } // comments
+whitespace                = _{ " " | "\t" | NEWLINE }
+
+r_program                 = { SOI ~ r_macro* ~ r_expr ~ EOI }
+
+  r_macro                 = { t_macro ~ t_ident ~ "(" ~ r_macro_param ~ ("," ~ r_macro_param)* ~ ")" ~ t_assign ~ r_expr ~ ";" }
+    r_macro_param         = { t_ident }
+
+  r_expr                  = { r_lambda_expr | r_value_expr }
+    r_lambda_expr         = { r_unitlambda | r_paramlambda }
+      r_unitlambda        = { t_bar_bar ~ r_value_expr }
+      r_paramlambda       = { t_bar ~ r_lambda_params ~ t_bar ~ r_value_expr }
+        r_lambda_params   = { r_param ~ ("," ~ r_param)* }
+          r_param         = { t_ident ~ r_type_annot? }
+    r_value_expr          = { r_let_expr | r_operator_expr }
+    r_let_expr            = { t_let ~ t_ident ~ r_type_annot? ~ t_assign ~ r_operator_expr ~ ";" ~ r_value_expr }
+  r_type_annot            = { ":" ~ r_type }
+  r_type                  = { r_i8 | r_i16 | r_i32 | r_i64 | r_u8 | r_u16 | r_u32 | r_u64
+                            | r_f32 | r_f64 | r_bool | r_unit | r_string | r_vec | r_stream
+                            | r_simd | r_appender | r_streamappender | r_merger | r_dict
+                            | r_dictmerger | r_groupmerger | r_vecmerger | r_struct
+                            | r_unitfunction | r_paramfunction | r_type_var }
+    r_i8                  = { t_i8 }
+    r_i16                 = { t_i16 }
+    r_i32                 = { t_i32 }
+    r_i64                 = { t_i64 }
+    r_u8                  = { t_u8 }
+    r_u16                 = { t_u16 }
+    r_u32                 = { t_u32 }
+    r_u64                 = { t_u64 }
+    r_f32                 = { t_f32 }
+    r_f64                 = { t_f64 }
+    r_bool                = { t_bool }
+    r_unit                = { t_unit }
+    r_string              = { t_string }
+    r_vec                 = { t_vec ~ "[" ~ r_type ~ "]" }
+    r_stream              = { t_stream ~ "[" ~ r_type ~ "]" }
+    r_simd                = { t_simd ~ "[" ~ r_type ~ "]"   }
+    r_appender            = { r_annotations? ~ t_appender ~ "[" ~ r_type ~ "]" }
+    r_streamappender      = { r_annotations? ~ t_streamappender ~ "[" ~ r_type ~ "]" }
+    r_merger              = { r_annotations? ~ t_merger ~ "[" ~ r_type ~ "," ~ r_commutative_binop ~ "]" }
+    r_dict                = { t_dict ~ "[" ~ r_type ~ "," ~ r_type ~ "]" }
+    r_dictmerger          = { r_annotations? ~ t_dictmerger ~ "[" ~ r_type ~ "," ~ r_type ~ "," ~ r_commutative_binop ~ "]" }
+    r_groupmerger         = { r_annotations? ~ t_groupmerger ~ "[" ~ r_type ~ "," ~ r_type ~ "]" }
+    r_vecmerger           = { r_annotations? ~ t_vecmerger ~ "[" ~ r_type ~ "," ~ r_commutative_binop ~ "]" }
+    r_struct              = { "{" ~ r_type ~ ("," ~ r_type)* ~ "}" }
+    r_unitfunction        = { t_bar_bar ~ "(" ~ r_type ~ ")" }
+    r_paramfunction       = { t_bar ~ r_type ~ ("," ~ r_type)* ~ t_bar ~ "(" ~ r_type ~ ")" }
+    r_type_var            = { t_type_var }
+
+  r_operator_expr         = { r_primary ~ r_binary* }
+    r_primary             = { r_literal | r_cast | r_tovec | r_ident | r_parenexpr | r_makevec
+                            | r_makestruct | r_if | r_iterate | r_select | r_broadcast
+                            | r_serialize | r_deserialize | r_cudf | r_zip | r_for | r_len
+                            | r_lookup | r_slice | r_sort | r_unary | r_merge | r_result
+                            | r_newappender | r_newstreamappender | r_newmerger | r_newdictmerger
+                            | r_newgroupmerger | r_newvecmerger | r_binaryfunction }
+      r_literal           = { r_i8_lit | r_i16_lit | r_i32_lit | r_i64_lit | r_f32_lit | r_f64_lit | r_bool_lit | r_string_lit }
+        r_i8_lit          = { t_i8_lit }
+        r_i16_lit         = { t_i16_lit }
+        r_i32_lit         = { t_i32_lit }
+        r_i64_lit         = { t_i64_lit }
+        r_f32_lit         = { t_f32_lit }
+        r_f64_lit         = { t_f64_lit }
+        r_bool_lit        = { t_bool_lit }
+        r_string_lit      = { t_string_lit }
+
+      r_cast              = { (t_i8|t_i16|t_i32|t_i64|t_u8|t_u16|t_u32|t_u64|t_f32|t_f64|t_bool) ~ "(" ~ r_value_expr ~ ")" }
+      r_tovec             = { t_tovec ~ "(" ~ r_value_expr ~ ")" }
+      r_ident             = { t_ident }
+      r_parenexpr         = { "(" ~ r_expr ~ ")" }
+      r_makevec           = { "[" ~ r_value_expr ~ ("," ~ r_value_expr)* ~ "]" }
+      r_makestruct        = { ":" ~ r_value_expr ~ ("," ~ r_value_expr)* ~ "}" }
+      r_if                = { r_annotations? ~ t_if ~ "(" ~ r_value_expr ~ "," ~ r_value_expr ~ "," ~ r_value_expr ~ ")" }
+      r_iterate           = { t_iterate ~ "(" ~ r_value_expr ~ "," ~ r_lambda_expr ~ ")" }
+      r_select            = { t_select ~ "(" ~ r_value_expr ~ "," ~ r_value_expr ~ "," ~ r_value_expr ~ ")" }
+      r_broadcast         = { t_broadcast ~ "(" ~ r_value_expr ~ ")" }
+      r_serialize         = { t_serialize ~ "(" ~ r_value_expr ~ ")" }
+      r_deserialize       = { r_annotations? ~ t_deserialize ~ "[" ~ r_type ~ "]" ~ "(" ~ r_value_expr ~ ")" }
+      r_cudf              = { r_annotations? ~ ( r_pointer_udf | r_name_udf ) }
+
+        r_pointer_udf     = { t_cudf ~ "[" ~ t_star ~ r_value_expr ~ "," ~ r_type ~ "]" ~ "(" ~ r_function_params ~ ")" }
+        r_name_udf        = { t_cudf ~ "[" ~ t_ident ~ "," ~ r_type ~ "]" ~ "(" ~ r_function_params ~ ")" }
+
+      r_zip               = { t_zip ~ "(" ~ r_function_params ~ ")" }
+      r_for               = { r_annotations? ~ t_for ~ "(" ~ r_iterator ~ "," ~ r_value_expr ~ "," ~ r_lambda_expr ~ ")" }
+
+        r_iterator        = { r_simpleiter | r_fouriter | r_sixiter | r_rangeiter | r_keyby | r_unkown_iter }
+          r_simpleiter    = { (t_scalariter|t_simditer|t_fringeiter|t_nditer) ~ "(" ~ r_value_expr ~ ")" }
+          r_fouriter      = { (t_scalariter|t_simditer|t_fringeiter) ~ "(" ~ r_value_expr ~ "," ~ r_value_expr ~ "," ~ r_value_expr ~ "," ~ r_value_expr ~ ")" }
+          r_sixiter       = { t_nditer ~ "(" ~ r_value_expr ~ "," ~ r_value_expr ~ "," ~ r_value_expr ~ "," ~ r_value_expr ~ "," ~ r_value_expr ~ "," ~ r_value_expr ~ ")" }
+          r_rangeiter     = { t_rangeiter ~ "(" ~ r_value_expr ~ "," ~ r_value_expr ~ "," ~ r_value_expr ~ ")" }
+          r_keyby         = { t_keyby ~ "(" ~ r_value_expr ~ "," ~ r_lambda_expr ~ ")" }
+          r_unkown_iter   = { r_value_expr }
+
+      r_len               = { t_len ~ "(" ~ r_value_expr ~ ")" }
+      r_lookup            = { t_lookup ~ "(" ~ r_value_expr ~ "," ~ r_value_expr ~ ")" }
+      r_slice             = { t_slice ~ "(" ~ r_value_expr ~ "," ~ r_value_expr ~ "," ~ r_value_expr ~ ")" }
+      r_sort              = { t_sort ~ "(" ~ r_value_expr ~ "," ~ r_lambda_expr ~ ")" }
+      r_unary             = { r_negate | r_not | r_unary_op }
+        r_negate          = { t_minus ~ r_operator_expr }
+        r_not             = { t_bang ~ r_operator_expr }
+        r_unary_op        = { (t_exp|t_sin|t_cos|t_tan|t_asin|t_acos|t_atan|t_sinh|t_cosh|t_tanh|t_log|t_erf|t_sqrt) ~ "(" ~ r_value_expr ~ ")" }
+
+      r_merge             = { t_merge ~ "(" ~ r_value_expr ~ "," ~ r_value_expr ~ ")" }
+      r_result            = { t_result ~ "(" ~ r_value_expr ~ ")" }
+      r_newappender       = { r_annotations? ~ t_appender ~ ("[" ~ r_type ~ "]")? ~ ("(" ~ r_value_expr ~ ")")? }
+      r_newstreamappender = { r_annotations? ~ t_streamappender ~ ("[" ~ r_type ~ "]")? ~ ("(" ~ ")")? }
+      r_newmerger         = { r_annotations? ~ t_merger ~ "[" ~ r_type ~ "," ~ r_commutative_binop ~ "]" ~ ("(" ~ r_value_expr ~ ")")? }
+      r_newdictmerger     = { r_annotations? ~ t_dictmerger ~ "[" ~ r_type ~ "," ~ r_type ~ "," ~ r_commutative_binop ~ "]" ~ ("(" ~ r_value_expr ~ ")")? }
+      r_newgroupmerger    = { r_annotations? ~ t_groupmerger ~ ("[" ~ r_type ~ "," ~ r_type ~ "]")? ~ ("(" ~ r_value_expr ~ ")")? }
+      r_newvecmerger      = { r_annotations? ~ t_vecmerger ~ "[" ~ r_type ~ "," ~ r_commutative_binop ~ "]" ~ ("(" ~ r_value_expr ~ ")")? }
+      r_binaryfunction    = { (t_min|t_max|t_pow) ~ "(" ~ r_value_expr ~ "," ~ r_value_expr ~ ")" }
+
+    r_binary              = { r_application | r_projection | r_ascription | r_product | r_sum | r_comparison
+                            | r_equality | r_bitwise_and | r_bitwise_xor | r_bitwise_or | r_logical_and | r_logical_or }
+      r_application       = { "(" ~ r_function_params ~ ")" }
+      r_projection        = { "." ~ t_index }
+      r_ascription        = { ":" ~ r_type }
+      r_product           = { (t_star|t_slash|t_percent) ~ r_primary }
+      r_sum               = { (t_plus|t_minus) ~ r_primary }
+      r_comparison        = { (t_lt|t_gt|t_leq|t_geq) ~ r_primary }
+      r_equality          = { (t_eq|t_neq) ~ r_primary }
+      r_bitwise_and       = { t_and ~ r_primary }
+      r_bitwise_xor       = { t_circ ~ r_primary }
+      r_bitwise_or        = { t_bar ~ r_primary }
+      r_logical_and       = { t_and_and ~ r_primary }
+      r_logical_or        = { t_bar_bar ~ r_primary }
+
+  r_function_params       = { r_expr ~ ("," ~ r_expr)* }
+
+  r_commutative_binop     = { r_sum_op | r_product_op | r_max_op | r_min_op }
+    r_sum_op              = { t_plus }
+    r_product_op          = { t_star }
+    r_max_op              = { t_max }
+    r_min_op              = { t_min }
+
+  r_annotations           = { t_at ~ "(" ~ r_annotations_pair ~ ("," ~ r_annotations_pair)* ~ ")" }
+    r_annotations_pair    = { r_id_pair | r_literal_pair }
+      r_id_pair           = { t_ident ~ "{" ~ t_ident }
+      r_literal_pair      = { t_ident ~ ":" ~ r_literal }
+
+
+
