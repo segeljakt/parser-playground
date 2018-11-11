@@ -23,7 +23,7 @@ pub struct Ident<'a> (
 
 #[derive(Debug)]
 pub enum Expr<'a> {
-  Let(Let<'a>),
+  Let(Binding<'a>, Box<Expr<'a>>),
   I32(i32),
   Bool(bool),
   Term(&'a str),
@@ -35,13 +35,6 @@ pub enum Expr<'a> {
   Div(Box<Expr<'a>>, Box<Expr<'a>>),
   Pow(Box<Expr<'a>>, Box<Expr<'a>>),
 }
-
-#[derive(Debug, FromPest)]
-#[pest_ast(rule(Rule::let_expr))]
-pub struct Let<'a> (
-  Binding<'a>,
-  Box<Expr<'a>>,
-);
 
 #[derive(Debug, FromPest)]
 #[pest_ast(rule(Rule::binding))]
@@ -82,7 +75,13 @@ impl<'a> FromPest<'a> for Expr<'a> {
           term     => Expr::Term(pair.as_str()),
           not      => Expr::Not(box Expr::from_pest(&mut pair.into_inner())?),
           neg      => Expr::Neg(box Expr::from_pest(&mut pair.into_inner())?),
-          let_expr => Expr::Let(Let::from_pest(&mut Pairs::single(pair))?),
+          let_expr => {
+            let mut inner = pair.into_inner();
+            Expr::Let(
+              Binding::from_pest(&mut Pairs::single(inner.next().unwrap()))?,
+              box Expr::from_pest(&mut inner.next().unwrap().into_inner())?,
+            )
+          },
           expr     => Expr::from_pest(&mut pair.into_inner())?,
           _ => unreachable!(),
         }),
