@@ -1,56 +1,59 @@
 use polytype::*;
+
+#[derive(Debug)]
 pub struct TypedTree<'a> (
   TypedExpr<'a>
 );
 
-use crate::transformer::SyntaxTree;
+use crate::transformer::*;
 
-impl<'a> TypedTree<'a> {
-  pub fn new(syntax_tree: SyntaxTree) {
-    let mut ctx = Context::default();
+impl<'a> From<SyntaxTree<'a>> for TypedTree<'a> {
+  fn from(x: SyntaxTree<'a>) -> TypedTree<'a> {
+    //let mut ctx = Context::default();
     // let x: i32 = 3; let y = x + 5;
-    let x = Type::Constructed("i32", vec![]);
-    let y = ctx.new_variable();
-    ctx.unify(&x, &y).expect("unifies");
-    let x = x.apply(&ctx);
-    let y = y.apply(&ctx);
-    assert_eq!(x, y);
+    //let x = Type::Constructed("i32", vec![]);
+    //let y = ctx.new_variable();
+    //ctx.unify(&x, &y).expect("unifies");
+    //let x = x.apply(&ctx);
+    //let y = y.apply(&ctx);
+    //assert_eq!(x, y);
 
-    println!("{:#?}", x);
-    println!("{:#?}", y);
-    println!("{:#?}", ctx);
+    //println!("{:#?}", x);
+    //println!("{:#?}", y);
+    //println!("{:#?}", ctx);
+    unreachable!();
+    //TypedTree (
+      //TypedExpr::from(expr)
+    //)
   }
 }
 
+#[derive(Debug)]
 pub enum TypedExpr<'a> {
-  TypedLet(TypedLet<'a>),
-  TypedOp(TypedOp<'a>),
+  //TypedLet(Symbol, Box<TypedExpr<'a>>, Box<TypedExpr<'a>>),
+  //TypedLit(Type, Value),
+  TypedTerm(&'a str),
+  //TypedUnary(UnOp, Box<TypedExpr<'a>>),
+  //TypedBinary(Box<TypedExpr<'a>>, BinOp, Box<TypedExpr<'a>>)
 }
 
-pub struct TypedLet<'a> (
-  TypedBinding<'a>,
-  Box<TypedExpr<'a>>,
-);
+//impl<'a> From<Expr<'a>> for TypedExpr<'a> {
+  //fn from(expr: Expr<'a>) -> Self {
+    //use crate::transformer::{Expr::*};
+    //match expr {
+      //Let(sym) => ,
+      //Lit(Value()) => ,
+      //Binary(lhs,op,rhs) => ,
+      //Unary(lhs,op,rhs) => ,
+      //_ => unreachable!()
+    //}
+  //}
+//}
 
-pub struct TypedBinding<'a> (
-  TypedIdent<'a>,
-  TypedOp<'a>,
-);
+//#[derive(Debug)]
+//struct Symbol;
 
-pub enum TypedOp<'a> {
-  I32(i32),
-  Bool(bool),
-  Term(&'a str),
-  Not(Box<TypedOp<'a>>),
-  Neg(Box<TypedOp<'a>>),
-  Add(Box<(TypedOp<'a>, TypedOp<'a>)>),
-  Sub(Box<(TypedOp<'a>, TypedOp<'a>)>),
-  Mul(Box<(TypedOp<'a>, TypedOp<'a>)>),
-  Div(Box<(TypedOp<'a>, TypedOp<'a>)>),
-  Pow(Box<(TypedOp<'a>, TypedOp<'a>)>),
-}
-
-pub struct TypedIdent<'a> (
-  &'a str
-);
-
+//enum Type {
+  //I32,
+  //Bool,
+//}

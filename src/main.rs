@@ -1,5 +1,6 @@
 #![allow(bad_style)]
 #![feature(box_syntax)]
+#![feature(try_from)]
 #![allow(unused)]
 
 
@@ -33,13 +34,14 @@ fn main() -> Result<(), Box<dyn Error>> {
   let source = String::from_utf8(file)?;
   println!("source = {:#?}", source);
 
-  let mut parse_tree = ParseTree::parse(Rule::program, &source).unwrap();
+  let mut parse_tree = ParseTree::parse_program(&source)?;
   println!("parse tree = {:#?}\n", parse_tree);
 
   let syntax_tree = SyntaxTree::from_pest(&mut parse_tree).unwrap();
   println!("syntax tree = {:#?}\n", syntax_tree);
 
-  //println!("typed tree = {:#?}\n", TypedTree::new(syntax_tree));
+  let typed_tree = TypedTree::from(syntax_tree);
+  println!("typed tree = {:#?}\n", typed_tree);
 
   Ok(())
 }
